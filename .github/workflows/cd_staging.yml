@@ -1,7 +1,9 @@
 name: Deploy to staging
+
+# Define the event triggers
 on:
   push:
-    branches: [ dev ]
+    branches: [ dev ]  # Trigger on push to the `dev` branch
 
 jobs:
   redeploy_everything:
