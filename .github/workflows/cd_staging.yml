@@ -9,21 +9,26 @@ jobs:
     steps:
       - name: Configure SSH
         run: |
+          # Debug: Print first few characters of key to verify format (safely)
+          echo "First line of key:"
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" | head -n 1
+          
+          # Create .ssh directory
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" | base64 -d > ~/.ssh/id_rsa
+          
+          # Write key directly without base64 decode
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          
+          # Ensure correct permissions
           chmod 600 ~/.ssh/id_rsa
+          
+          # Debug: Check key file exists and permissions
+          ls -la ~/.ssh/id_rsa
+          
+          # Add server to known hosts
           ssh-keyscan -H 52.66.241.104 >> ~/.ssh/known_hosts
 
-      - name: Deploy
+      - name: Test SSH Connection
         run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@52.66.241.104 '
-            cd ci-cd_prac/ && \
-            git pull origin dev && \
-            export PATH=/root/.nvm/versions/node/v22.13.1/bin:$PATH && \
-            npm install -g pnpm && \
-            pnpm install && \
-            pnpm run build && \
-            pm2 restart fe-sever && \
-            pm2 restart http-sever && \
-            pm2 restart ws-sever
-          '
+          # Try connection with verbose logging
+          ssh -vvv -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@52.66.241.104 'echo "test"'
