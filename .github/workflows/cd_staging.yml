@@ -8,11 +8,39 @@ jobs:
     runs-on: ubuntu-latest
     name: Deploying everything to the staging cluster
     steps:
-      - run: |
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" &> ~/ssh_key
-          mkdir -p /home/runner/.ssh
-          ls /home/runner/.ssh
-          touch /home/runner/.ssh/known_hosts
-          echo "${{ secrets.KNOWN_HOSTS }}" &> /home/runner/.ssh/known_hosts
-          chmod 700 /home/runner/ssh_key
-          ssh -i ~/ssh_key root@64.227.147.124 -t "cd week-25-ci-next-app/ && git pull origin main && export PATH=/root/.nvm/versions/node/v22.13.1/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin && npm install -g pnpm && pnpm install && pnpm run build && pm2 restart fe-sever && pm2 restart http-sever && pm2 restart ws-sever"
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up SSH and deploy
+        run: |
+          # Store SSH Private Key
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/ssh_key
+          chmod 700 ~/ssh_key
+
+          # Ensure SSH Directory Exists
+          mkdir -p ~/.ssh
+          touch ~/.ssh/known_hosts
+
+          # Add known hosts
+          echo "${{ secrets.KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+
+          # Deploy via SSH
+          ssh -o StrictHostKeyChecking=no -i ~/ssh_key root@52.66.241.104 << 'EOF'
+            set -e  # Exit on error
+
+            cd ~/ci-cd_prac/
+
+            # Pull latest changes
+            git pull origin dev
+
+            # Ensure correct Node.js version and environment
+            export PATH="/root/.nvm/versions/node/v22.13.1/bin:$PATH"
+
+            # Install dependencies
+            npm install -g pnpm
+            pnpm install
+            pnpm run build
+
+            # Restart PM2 processes only if they exist
+            pm2 restart all
+          EOF
