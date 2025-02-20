@@ -1,0 +1,21 @@
+name: Deploy to Production
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [ closed ]
+
+jobs:
+  redeploy_production:
+    runs-on: ubuntu-latest
+    name: Deploying everything to the production cluster
+    if: github.event.pull_request.merged == true
+    steps:
+      - run: |
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" &> ~/ssh_key
+          mkdir -p /home/runner/.ssh
+          ls /home/runner/.ssh
+          touch /home/runner/.ssh/known_hosts
+          echo "${{ secrets.KNOWN_HOSTS }}" &> /home/runner/.ssh/known_hosts
+          chmod 700 ~/ssh_key
+          ssh -i ~/ssh_key ubuntu@65.0.7.162 -t "cd ci-cd_prac/ && git config pull.rebase false && git pull origin main && sudo npm install -g pnpm && pnpm install && pnpm run build && pm2 restart all"
