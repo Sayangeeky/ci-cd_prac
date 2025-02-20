@@ -1,0 +1,19 @@
+name: Deploy to staging
+on:
+  push:
+    branches:
+      - dev
+jobs:
+  redeploy_everything:
+    name: Deploy everything to the staging cluster
+    steps:
+      - name: SSH into ec2 instance
+      - run: |
+              echo {{secrets.SSH_PRIVATE_KEY}} &> ~/.ssh/id_rsa
+              ssh -i ~/.ssh/id_rsa ubuntu@52.66.241.104
+              cd ci-cd_prac && git pull
+              pnpm i
+              pm2 restart all
+
+
+    
