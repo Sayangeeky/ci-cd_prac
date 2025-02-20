@@ -1,7 +1,7 @@
 name: Deploy to staging
 on:
   push:
-    branches: [ main ]
+    branches: [ dev ]
 jobs:
   redeploy_everything:
     runs-on: ubuntu-latest
@@ -22,9 +22,9 @@ jobs:
 
       - name: Deploy via SSH
         run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa root@64.227.147.124 '
-            cd week-25-ci-next-app/ && \
-            git pull origin main && \
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@52.66.241.104 '
+            cd ci-cd_prac/ && \
+            git pull origin dev && \
             export PATH=/root/.nvm/versions/node/v22.13.1/bin:$PATH && \
             npm install -g pnpm && \
             pnpm install && \
