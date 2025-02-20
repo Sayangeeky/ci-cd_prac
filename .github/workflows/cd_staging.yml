@@ -4,12 +4,12 @@ on:
     branches:
       - [dev]
 jobs:
-
   redeploy_everything:
+    runs-on: ubuntu-latest
     name: Deploy everything to the staging cluster
     steps:
-      - name: SSH into ec2 instance
-      - run: |
+       name: SSH into ec2 instance
+       run: |
               echo {{secrets.SSH_PRIVATE_KEY}} &> ~/.ssh/id_rsa
               ssh -i ~/.ssh/id_rsa ubuntu@52.66.241.104
               cd ci-cd_prac && git pull
