@@ -1,7 +1,7 @@
 name: Deploy to staging
 on:
   push:
-    branches: [ dev ]
+    branches: [ main ]
 jobs:
   redeploy_everything:
     runs-on: ubuntu-latest
@@ -12,17 +12,16 @@ jobs:
           # Create .ssh directory
           mkdir -p ~/.ssh
           
-          # Add private key with proper formatting
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          # Add private key (base64 decode if needed)
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" | base64 -d > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           
           # Add known hosts
-          echo "${{ secrets.KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          ssh-keyscan -H 52.66.241.104 >> ~/.ssh/known_hosts
           chmod 644 ~/.ssh/known_hosts
 
-      - name: Deploy via SSH
-        run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@52.66.241.104 '
+      - name: Test SSH Connection
+        run: ssh -v -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@52.66.241.104 'echo "Connection successful"'
             cd ci-cd_prac/ && \
             git pull origin dev && \
             export PATH=/root/.nvm/versions/node/v22.13.1/bin:$PATH && \
