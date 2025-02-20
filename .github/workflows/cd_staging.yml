@@ -1,35 +1,19 @@
-name: Deploy to Staging
-
+name: Deploy to staging
 on:
   push:
     branches: [ dev ]
 
 jobs:
-  deploy:
+  redeploy_everything:
     runs-on: ubuntu-latest
+    name: Deploying everything to the staging cluster
     steps:
-      - name: Configure SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 700 ~/.ssh/id_rsa
-
-          echo "${{ secrets.KNOWN_HOSTS }}" > ~/.ssh/known_hosts
-          chmod 700 ~/.ssh/known_hosts
-
-      - name: Deploy Application
-        run: |
-          ssh -i ~/.ssh/id_rsa ubuntu@52.66.241.104 << 'EOF'
-            cd ci-cd_prac
-            git pull origin dev
-
-            source ~/.nvm/nvm.sh && nvm use 22
-
-            npm install -g pm2 pnpm
-            pnpm install
-            pnpm run build
-
-            pm2 restart fe-server
-            pm2 restart http-server
-            pm2 restart ws-server
-          EOF
+      - run: |
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" &> ~/ssh_key
+          mkdir -p /home/runner/.ssh
+          ls /home/runner/.ssh
+          touch /home/runner/.ssh/known_hosts
+          echo "${{ secrets.KNOWN_HOSTS }}" &> /home/runner/.ssh/known_hosts
+          chmod 700 /home/runner/ssh_key
+          ssh -i ~/ssh_key ubuntu@52.66.241.104 -t "cd week-25-ci-next-app/ && git pull origin main && export PATH=/root/.nvm/versions/node/v22.13.1/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin && npm install -g pnpm && pnpm install && pnpm run build && pm2 restart fe-sever && pm2 restart http-sever && pm2 restart ws-sever"
+          
