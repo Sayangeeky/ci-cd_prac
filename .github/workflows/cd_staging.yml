@@ -1,34 +1,35 @@
-name: Deploy to staging
+name: Deploy to Staging
+
 on:
   push:
     branches: [ dev ]
+
 jobs:
-  redeploy_everything:
+  deploy:
     runs-on: ubuntu-latest
-    name: Deploying everything to the staging cluster
     steps:
       - name: Configure SSH
         run: |
-          # Debug: Print first few characters of key to verify format (safely)
-          echo "First line of key:"
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" | head -n 1
-          
-          # Create .ssh directory
           mkdir -p ~/.ssh
-          
-          # Write key directly without base64 decode
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          
-          # Ensure correct permissions
           chmod 600 ~/.ssh/id_rsa
-          
-          # Debug: Check key file exists and permissions
-          ls -la ~/.ssh/id_rsa
-          
-          # Add server to known hosts
-          ssh-keyscan -H 52.66.241.104 >> ~/.ssh/known_hosts
 
-      - name: Test SSH Connection
+          echo "${{ secrets.KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Deploy Application
         run: |
-          # Try connection with verbose logging
-          ssh -vvv -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@52.66.241.104 'echo "test"'
+          ssh -i ~/.ssh/id_rsa ubuntu@52.66.241.104 << 'EOF'
+            cd ci-cd_prac
+            git pull origin dev
+
+            source ~/.nvm/nvm.sh && nvm use 22
+
+            npm install -g pm2 pnpm
+            pnpm install
+            pnpm run build
+
+            pm2 restart fe-server
+            pm2 restart http-server
+            pm2 restart ws-server
+          EOF
